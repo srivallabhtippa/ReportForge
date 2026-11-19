@@ -1,11 +1,52 @@
 services:
+  db:
+    image: postgres:17
+    environment:
+      # Admin account (superuser). Only used for set-up, never by the app.
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?set POSTGRES_ADMIN_PASSWORD in .env}
+      # Read by db/init/01-create-app-role.sh to create the limited app account.
+      APP_DB_NAME: ${APP_DB_NAME:-reportforge}
+      APP_DB_USER: ${APP_DB_USER:-reportforge}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
+    ports:
+      # 127.0.0.1 = reachable from this Mac only. 5433 because your local Postgres uses 5432.
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   backend:
     build: ./backend
+    environment:
+      # "db" is this container's hostname on the compose network.
+      DATABASE_URL: postgresql+psycopg://${APP_DB_USER:-reportforge}:${APP_DB_PASSWORD}@db:5432/${APP_DB_NAME:-reportforge}
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+      APP_ENV: docker
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+
   frontend:
     build: ./frontend
     ports:
       - "8080:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+
+volumes:
+  pgdata:

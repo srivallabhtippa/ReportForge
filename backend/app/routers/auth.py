@@ -1,0 +1,74 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app.models import Organization, User
+from sqlalchemy import select
+
+from app.schemas import LoginRequest, RegisterRequest, RegisterResponse, TokenResponse
+from app.security import (
+    DUMMY_PASSWORD_HASH,
+    create_access_token,
+    hash_password,
+    verify_password,
+)
+
+router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+
+@router.post(
+    "/register",
+    response_model=RegisterResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def register(payload: RegisterRequest, db: Session = Depends(get_db)):
+    # Emails are compared case-insensitively by always storing them in lowercase.
+    email = payload.email.lower()
+
+    organization = Organization(name=payload.organization_name.strip())
+    user = User(
+        organization=organization,
+        email=email,
+        full_name=payload.full_name.strip(),
+        password_hash=hash_password(payload.password),
+        role="admin",
+    )
+    # Adding the user also adds the organization (through the relationship).
+    db.add(user)
+
+    try:
+        # One commit = one transaction: either both rows exist or neither does.
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        # The unique constraint on users.email is the real guard. Checking first and
+        # inserting later would be racy if two requests arrived at the same moment.
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, detail="An account with this email already exists"
+        )
+
+    return RegisterResponse(organization=organization, user=user)
+
+
+@router.post("/login", response_model=TokenResponse)
+def login(payload: LoginRequest, db: Session = Depends(get_db)):
+    user = db.scalar(select(User).where(User.email == payload.email.lower()))
+
+    # Always run one password check, even for an unknown email, so response time
+    # does not reveal whether the account exists.
+    password_ok = verify_password(
+        payload.password, user.password_hash if user else DUMMY_PASSWORD_HASH
+    )
+
+    # One identical message for unknown email, wrong password and disabled account,
+    # so an attacker cannot tell which emails are registered.
+    if user is None or not password_ok or not user.is_active:
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    token, expires_in = create_access_token(user.id, user.organization_id)
+    return TokenResponse(access_token=token, expires_in=expires_in)
