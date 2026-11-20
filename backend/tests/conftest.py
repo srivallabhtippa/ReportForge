@@ -42,6 +42,9 @@ from alembic.config import Config  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app.database import SessionLocal, engine  # noqa: E402
+from app.models import Organization, Permission, Role, User  # noqa: E402
+from app.security import hash_password  # noqa: E402
+from sqlalchemy import select  # noqa: E402
 from app.main import app  # noqa: E402
 
 
@@ -115,3 +118,46 @@ def auth_headers(register, login):
     assert register().status_code == 201
     token = login().json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+# --- Helpers for tests that need users with specific roles --------------------------
+
+TEST_PASSWORD = "correct-horse-battery"
+
+
+def make_org(db, name="Acme"):
+    organization = Organization(name=name)
+    db.add(organization)
+    db.commit()
+    return organization
+
+
+def make_role(db, organization, name, keys, is_system=False):
+    perms = list(db.scalars(select(Permission).where(Permission.key.in_(keys))))
+    role = Role(organization=organization, name=name, permissions=perms, is_system=is_system)
+    db.add(role)
+    db.commit()
+    return role
+
+
+def make_user(db, organization, email, roles):
+    user = User(
+        organization=organization,
+        email=email,
+        full_name="Test User",
+        password_hash=hash_password(TEST_PASSWORD),
+        roles=roles,
+    )
+    db.add(user)
+    db.commit()
+    return user
+
+
+def login_as(client, email):
+    r = client.post("/api/auth/login", json={"email": email, "password": TEST_PASSWORD})
+    return {"Authorization": f"Bearer {r.json()['access_token']}"}
+
+
+@pytest.fixture
+def org(db):
+    return make_org(db)

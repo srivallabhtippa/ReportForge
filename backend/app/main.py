@@ -3,11 +3,14 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.routers import auth, me
+from app.routers import audit_log, auth, me, roles, users
 
 app = FastAPI(title="ReportForge API")
 app.include_router(auth.router)
 app.include_router(me.router)
+app.include_router(roles.router)
+app.include_router(users.router)
+app.include_router(audit_log.router)
 
 @app.get("/health")
 def health():

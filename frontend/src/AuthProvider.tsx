@@ -42,8 +42,10 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     setStatus("anonymous");
   };
 
+  const can = (permission: string) => me?.permissions.includes(permission) ?? false;
+
   return (
-    <AuthContext.Provider value={{ status, me, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ status, me, signIn, signUp, signOut, can }}>
       {children}
     </AuthContext.Provider>
   );

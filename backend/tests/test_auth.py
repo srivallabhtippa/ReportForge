@@ -19,7 +19,7 @@ def test_register_creates_organization_and_admin(register, db):
     body = response.json()
     assert body["organization"]["name"] == "Acme Supermarkets"
     assert body["user"]["email"] == "ada@example.com"  # stored in lowercase
-    assert body["user"]["role"] == "admin"
+    assert [r["name"] for r in body["user"]["roles"]] == ["Admin"]
     assert count(db, Organization) == 1
     assert count(db, User) == 1
 

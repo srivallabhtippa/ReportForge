@@ -2,7 +2,7 @@
 
 A multi-tenant data platform, built as a learning project. An organization registers, its first user becomes the admin, and (in later versions) the admin defines what the organization tracks, imports data, creates roles and users, and controls what each role can see. See [ROADMAP.md](ROADMAP.md) for the plan and [CHANGELOG.md](CHANGELOG.md) for what each version added.
 
-**Status:** v1 Foundation (register, log in, protected workspace).
+**Status:** v2 Access control (roles, users, permissions, audit log) built on the v1 Foundation (register, log in, protected workspace).
 
 **Stack:** FastAPI, SQLAlchemy, Alembic, PostgreSQL, React, Vite, TypeScript, Docker.
 
@@ -54,6 +54,10 @@ cd backend && source .venv/bin/activate && pytest -q
 | 5433 | Docker PostgreSQL, published to your machine only | Docker |
 
 Do not run Docker's backend and a local `uvicorn` at the same time; both use port 8000.
+
+## Permissions in short
+
+Every organization gets an **Admin** role (all permissions, cannot be edited). Admins create roles by combining permissions from a fixed catalogue (`backend/app/permissions.py`), create users and assign roles. A route is protected with `Depends(require_permission("users.manage"))`; to add a permission, add it to the catalogue and write a migration (see ADR 0005). Every change is recorded in the audit log.
 
 ## Documentation
 

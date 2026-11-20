@@ -1,6 +1,6 @@
 # ADR 0004: v1 data model choices
 
-**Status:** Accepted (v1, 2026-11). Items marked "v2" are expected to change.
+**Status:** Accepted (v1, 2026-11). Decision 4 (`role` column) is superseded by [ADR 0005](0005-rbac-permission-model.md) in v2.
 
 ## Context
 v1 needs only organizations and their first admin, but every later feature hangs off these two tables, so tenancy must be designed in from the start.
