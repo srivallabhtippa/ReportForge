@@ -9,6 +9,9 @@ export interface AuthState {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (input: RegisterInput) => Promise<void>;
   signOut: () => void;
+  // True if the logged-in user holds the permission. For showing or hiding UI only:
+  // the backend decides what is really allowed.
+  can: (permission: string) => boolean;
 }
 
 export const AuthContext = createContext<AuthState | null>(null);

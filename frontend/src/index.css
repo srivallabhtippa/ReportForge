@@ -81,3 +81,38 @@ button.secondary { color: var(--text); background: transparent; border: 1px soli
   border: 1px dashed var(--border);
   border-radius: 12px;
 }
+
+/* --- Admin area (v2) --- */
+.workspace nav { display: flex; gap: 1rem; margin: 1.25rem 0; border-bottom: 1px solid var(--border); }
+.workspace nav a { padding: 0.5rem 0.25rem; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; }
+.workspace nav a.active { color: var(--text); border-bottom-color: var(--accent); }
+
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.toolbar h2 { margin: 0; }
+.actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.row { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+
+.panel { padding: 1.25rem; margin-bottom: 1.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+fieldset { display: grid; gap: 0.5rem; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 8px; }
+legend { padding: 0 0.35rem; font-size: 0.9rem; font-weight: 500; }
+label.check { display: flex; align-items: flex-start; gap: 0.5rem; font-weight: 400; }
+label.inline { display: flex; align-items: center; gap: 0.5rem; }
+select { padding: 0.45rem 0.6rem; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 8px; }
+input[type="checkbox"] { margin-top: 0.2rem; }
+
+.list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.75rem; }
+.list li { padding: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+.list p { margin: 0.25rem 0 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.chip, .badge { padding: 0.1rem 0.5rem; font-size: 0.8rem; border: 1px solid var(--border); border-radius: 999px; }
+.badge { margin-left: 0.5rem; color: var(--muted); }
+.badge.off { margin-left: 0; color: var(--error); }
+
+table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+th, td { padding: 0.6rem 0.75rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+th { color: var(--muted); font-weight: 500; }
+td.actions { display: table-cell; white-space: nowrap; text-align: right; }
+td.actions button { margin-left: 0.5rem; }
+.workspace td.actions { margin-top: 0; }
+code.details { font-size: 0.8rem; word-break: break-word; }
+.workspace .actions { margin-top: 0.75rem; }

@@ -28,6 +28,15 @@ def test_me_returns_the_logged_in_user_and_organization(client, auth_headers):
     body = response.json()
     assert body["user"]["email"] == "ada@example.com"
     assert body["organization"]["name"] == "Acme Supermarkets"
+    assert "users.manage" in body["permissions"]  # the registering admin holds everything
+
+
+def test_me_lists_only_the_permissions_the_user_holds(client, db, org):
+    from tests.conftest import login_as, make_role, make_user
+
+    make_user(db, org, "v@example.com", [make_role(db, org, "Viewer", ["users.view"])])
+    body = client.get("/api/me", headers=login_as(client, "v@example.com")).json()
+    assert body["permissions"] == ["users.view"]
 
 
 # --- Requests that must be refused ---------------------------------------------

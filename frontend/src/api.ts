@@ -6,16 +6,46 @@ export interface Organization {
   name: string;
 }
 
+export interface RoleRef {
+  id: string;
+  name: string;
+}
+
 export interface User {
   id: string;
   email: string;
   full_name: string;
-  role: string;
+  is_active: boolean;
+  roles: RoleRef[];
 }
 
 export interface Me {
   organization: Organization;
   user: User;
+  permissions: string[]; // what this user may do; used to hide UI, never to enforce
+}
+
+export interface Permission {
+  key: string;
+  description: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  description: string;
+  is_system: boolean;
+  permissions: Permission[];
+}
+
+export interface AuditEvent {
+  id: string;
+  created_at: string;
+  action: string;
+  actor_email: string | null;
+  target_type: string | null;
+  target_id: string | null;
+  details: Record<string, unknown>;
 }
 
 interface TokenResponse {
@@ -101,6 +131,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     }
     throw new ApiError(response.status, message);
   }
+  if (response.status === 204) return undefined as T; // DELETE answers with no body
   return response.json() as Promise<T>;
 }
 
@@ -130,3 +161,50 @@ export async function login(email: string, password: string): Promise<void> {
 export function getMe(): Promise<Me> {
   return request<Me>("/api/me");
 }
+
+// --- Roles ---------------------------------------------------------------------
+export const listPermissions = () => request<Permission[]>("/api/permissions");
+export const listRoles = () => request<Role[]>("/api/roles");
+
+export interface RoleInput {
+  name: string;
+  description: string;
+  permission_keys: string[];
+}
+
+export const createRole = (input: RoleInput) =>
+  request<Role>("/api/roles", { method: "POST", body: JSON.stringify(input) });
+
+export const updateRole = (id: string, input: Partial<RoleInput>) =>
+  request<Role>(`/api/roles/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+
+export const deleteRole = (id: string) =>
+  request<void>(`/api/roles/${id}`, { method: "DELETE" });
+
+// --- Users ---------------------------------------------------------------------
+export const listUsers = () => request<User[]>("/api/users");
+
+export interface UserInput {
+  email: string;
+  full_name: string;
+  password: string;
+  role_ids: string[];
+}
+
+export const createUser = (input: UserInput) =>
+  request<User>("/api/users", { method: "POST", body: JSON.stringify(input) });
+
+export const updateUser = (
+  id: string,
+  input: { full_name?: string; is_active?: boolean; role_ids?: string[] },
+) => request<User>(`/api/users/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+
+// --- Audit log -----------------------------------------------------------------
+export const listAuditLog = (params: { action?: string; limit: number; offset: number }) => {
+  const query = new URLSearchParams({
+    limit: String(params.limit),
+    offset: String(params.offset),
+  });
+  if (params.action) query.set("action", params.action);
+  return request<AuditEvent[]>(`/api/audit-log?${query}`);
+};

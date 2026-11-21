@@ -1,8 +1,13 @@
 import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./authContext";
+import RequirePermission from "./components/RequirePermission";
+import Shell from "./components/Shell";
+import AuditLog from "./pages/AuditLog";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Roles from "./pages/Roles";
+import Users from "./pages/Users";
 import Workspace from "./pages/Workspace";
 
 // Pages that need a login. Anonymous visitors are sent to /login.
@@ -27,7 +32,12 @@ export default function App() {
       <Route path="/" element={<Navigate to="/workspace" replace />} />
       <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
       <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
-      <Route path="/workspace" element={<RequireAuth><Workspace /></RequireAuth>} />
+      <Route element={<RequireAuth><Shell /></RequireAuth>}>
+        <Route path="/workspace" element={<Workspace />} />
+        <Route path="/users" element={<RequirePermission permission="users.view"><Users /></RequirePermission>} />
+        <Route path="/roles" element={<RequirePermission permission="roles.view"><Roles /></RequirePermission>} />
+        <Route path="/audit" element={<RequirePermission permission="audit.view"><AuditLog /></RequirePermission>} />
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
